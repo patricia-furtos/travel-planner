@@ -1,0 +1,12 @@
+spring.application.name=travel-planner-backend
+
+# Conexiunea prin Session Pooler (IPv4)
+spring.datasource.url=jdbc:postgresql://aws-0-eu-west-1.pooler.supabase.com:5432/postgres?prepareThreshold=0
+spring.datasource.username=postgres.ftgkpqevnwaswvihbfer
+spring.datasource.password=PAROLA_TA_AICI
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# Hibernate va crea si actualiza tabelele automat din clasele Java
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
