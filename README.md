@@ -44,7 +44,13 @@ cd travel-planner
    cp application.properties.example application.properties
    ```
 3. Open `application.properties` and replace `PAROLA_TA_AICI` with your Supabase database password.
-4. Run the Spring Boot application (`BackendApplication.java`) — the API will start on `http://localhost:8080`.
+4. Configure the Supabase project URL in `application.properties`:
+   ```properties
+   supabase.url=https://your-project.supabase.co
+   ```
+   The backend uses this URL to validate Supabase access tokens and resolve the project's signing keys.
+   If the Supabase project still uses legacy HS256 tokens, configure `SUPABASE_JWT_SECRET` as a backend-only environment variable; do not expose it to the frontend.
+5. Run the Spring Boot application (`BackendApplication.java`) — the API will start on `http://localhost:8080`.
 
 ### 3. Frontend Setup (Next.js)
 1. Navigate to the frontend folder and install dependencies:
@@ -56,12 +62,23 @@ cd travel-planner
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_publishable_key
+   NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
    ```
 3. Start the development server:
    ```bash
    npm run dev
    ```
 4. Open `http://localhost:3000` in your browser.
+
+## Trips & Invites API
+
+The dashboard uses the signed-in Supabase session to call the backend. Requests to trip endpoints must include the Supabase access token as a bearer token; the backend derives the user ID from the verified token rather than trusting a client-supplied ID.
+
+- `GET /api/trips` — list trips for the signed-in user.
+- `POST /api/trips` — create a trip with `name` and optional `destination`, `startDate`, and `endDate`. The response includes its generated `inviteCode`.
+- `POST /api/trips/join` — join a trip with `{ "inviteCode": "..." }`.
+
+The trip owner is automatically added as a member. Invite codes are case-insensitive, and joining a trip the user already belongs to is safe to repeat.
 
 ---
 

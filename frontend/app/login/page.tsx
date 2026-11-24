@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import type { User } from "@supabase/supabase-js"
+import { backendUrl } from "@/lib/backend-api"
 import { createClient } from "@/lib/supabase"
 
 export default function LoginPage() {
@@ -10,17 +12,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [fullName, setFullName] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setNotice(null)
     setLoading(true)
 
     try {
-      let authUser = null
+      const supabase = createClient()
+      let authUser: User | null = null
+      let accessToken: string | null = null
 
       if (isSignUp) {
         const { data, error: signUpError } = await supabase.auth.signUp({
@@ -32,6 +37,7 @@ export default function LoginPage() {
         })
         if (signUpError) throw signUpError
         authUser = data.user
+        accessToken = data.session?.access_token ?? null
       } else {
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email,
@@ -39,16 +45,26 @@ export default function LoginPage() {
         })
         if (signInError) throw signInError
         authUser = data.user
+        accessToken = data.session?.access_token ?? null
       }
 
       // Sincronizam userul cu backend-ul Java Spring Boot
       if (authUser) {
-        const res = await fetch("http://localhost:8080/api/users/sync", {
+        if (!accessToken && isSignUp) {
+          setNotice("Contul a fost creat. Confirmă adresa de e-mail, apoi autentifică-te.")
+          return
+        }
+        if (!accessToken) {
+          throw new Error("Sesiunea Supabase lipsește. Autentifică-te din nou.")
+        }
+
+        const res = await fetch(`${backendUrl}/api/users/sync`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
           body: JSON.stringify({
-            id: authUser.id,
-            email: authUser.email,
             fullName: authUser.user_metadata?.full_name || fullName || email.split("@")[0],
             avatarUrl: null,
           }),
@@ -61,8 +77,8 @@ export default function LoginPage() {
         router.push("/")
         router.refresh()
       }
-    } catch (err: any) {
-      setError(err.message || "A apărut o eroare.")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "A apărut o eroare.")
     } finally {
       setLoading(false)
     }
@@ -152,12 +168,18 @@ export default function LoginPage() {
             onClick={() => {
               setIsSignUp(!isSignUp)
               setError(null)
+              setNotice(null)
             }}
             className="font-semibold text-slate-900 hover:underline"
           >
             {isSignUp ? "Loghează-te" : "Creează unul"}
           </button>
         </div>
+        {notice && (
+          <p role="status" className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+            {notice}
+          </p>
+        )}
       </div>
     </div>
   )

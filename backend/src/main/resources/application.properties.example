@@ -10,3 +10,9 @@ spring.datasource.driver-class-name=org.postgresql.Driver
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+# Validarea tokenurilor Supabase pentru endpointurile de calatorii
+supabase.url=${SUPABASE_URL:https://your-project.supabase.co}
+# Setati numai daca proiectul Supabase foloseste inca semnaturi legacy HS256.
+supabase.jwt-secret=${SUPABASE_JWT_SECRET:}
+app.frontend-origin=${FRONTEND_ORIGIN:http://localhost:3000}
